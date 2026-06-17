@@ -33,7 +33,7 @@ result <- kda(mpg ~ disp + hp + wt + drat,
 print(result)
 ```
 
-The formula `y ~ x1 + x2 + x3 | z1 + z2` optionally separates key driver variables from control variables using a `|`. Controls are held fixed in all regression-based methods and excluded from bivariate correlations. Method-specific tuning is available via `_params` arguments (e.g. `rf_params = list(ntree = 1000)`, `xgb_params = list(nrounds = 200, eta = 0.1)`).
+The formula `y ~ x1 + x2 + x3 | z1 + z2` optionally separates key driver variables from control variables using a `|`. Controls are held fixed in all regression-based methods and excluded from bivariate correlations. Method-specific tuning is available via `_params` arguments: `rf_params` (`ntree`, `mtry`), `xgb_params` (`nrounds`, `max_depth`, `eta`), and `shapex_params` (`nsim`) are currently effective. `cor_params`, `beta_params`, `useful_params`, `jrw_params`, and `shapley_params` are accepted but not yet wired to any tunable parameters.
 
 ## Methods
 

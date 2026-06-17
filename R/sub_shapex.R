@@ -12,11 +12,12 @@
 # - `params`: Additional parameters (e.g., `nsim` for number of simulations)
 #
 # **Returns:** List with importance vector and metadata
-sub_shapex <- function(y_var, x_vars, z_vars, data, y_type, params=list()) {
+sub_shapex <- function(y_var, x_vars, z_vars, data, y_type, params=list(), verbose=FALSE) {
 
-  all_vars <- c(y_var, x_vars, z_vars)
+  all_vars      <- c(y_var, x_vars, z_vars)
   complete_data <- data[complete.cases(data[, all_vars]), ]
-  n <- nrow(complete_data)
+  n             <- nrow(complete_data)
+  n_missing     <- nrow(data) - n
 
   if (n < length(x_vars) + length(z_vars) + 1) {
     stop("Insufficient complete cases for SHAP analysis")
@@ -28,14 +29,17 @@ sub_shapex <- function(y_var, x_vars, z_vars, data, y_type, params=list()) {
   if (y_type == "continuous") {
     model        <- lm(form, data=complete_data)
     pred_wrapper <- function(object, newdata) predict(object, newdata=newdata)
+    model_type   <- "lm"
 
   } else if (y_type == "binary") {
     model        <- glm(form, data=complete_data, family=binomial)
     pred_wrapper <- function(object, newdata) predict(object, newdata=newdata, type="response")
+    model_type   <- "glm(binomial)"
 
   } else if (y_type == "ordinal") {
     model        <- polr(form, data=complete_data)
     pred_wrapper <- function(object, newdata) as.numeric(predict(object, newdata=newdata))
+    model_type   <- "polr"
 
   } else {
     stop("Unknown y_type: ", y_type)
@@ -50,12 +54,18 @@ sub_shapex <- function(y_var, x_vars, z_vars, data, y_type, params=list()) {
     importance     <- mean_abs_shap[x_vars]
     names(importance) <- x_vars
 
+    if (verbose) {
+      miss_str <- if (n_missing > 0) paste0(", ", n_missing, " missing") else ""
+      message("\nSHAP Values (", model_type, "): n = ", n, miss_str, ", nsim = ", nsim)
+    }
+
     return(list(
       importance       = importance,
       method           = "shap",
+      model_type       = model_type,
       nsim             = nsim,
       n                = n,
-      n_missing        = nrow(data) - n,
+      n_missing        = n_missing,
       missing_strategy = "listwise",
       all_shap         = mean_abs_shap,
       model            = model
