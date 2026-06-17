@@ -1,0 +1,121 @@
+---
+title: "Getting Started with keydrivers"
+vignette: >
+  %\VignetteIndexEntry{Getting Started with keydrivers}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+`kda()` runs up to eight variable importance methods in a single call and returns a combined importance matrix alongside per-method metadata. Variable types are detected automatically from R class, and each method selects the appropriate model for the outcome type.
+
+This vignette uses the `mtcars` dataset (included in base R) to demonstrate three scenarios:
+
+1. **Continuous outcome** — all eight methods on `mpg`
+2. **Binary outcome** — key methods on a binarized version of `mpg`
+3. **Ordinal outcome** — key methods on a discretized version of `mpg`
+
+## Setup
+
+```{r}
+library(keydrivers)
+data(mtcars)
+
+x_vars <- c("disp", "hp", "wt", "drat")
+```
+
+`mtcars` contains performance and design data for 32 cars. We use fuel efficiency (`mpg`) as the outcome and four mechanical predictors as key drivers. Transmission type (`am`) will serve as a control variable in the continuous example.
+
+---
+
+## 1. Continuous Outcome
+
+With a continuous outcome, all eight methods are available. Regression-based methods use linear regression and R².
+
+```{r}
+result <- kda(mpg ~ disp + hp + wt + drat | am,
+              data       = mtcars,
+              corr       = TRUE,
+              beta       = TRUE,
+              useful     = TRUE,
+              jrw        = TRUE,
+              shapley    = TRUE,
+              shapex     = TRUE,
+              randforest = TRUE,
+              rf_params  = list(ntree = 1000),
+              xgboost_   = TRUE,
+              verbose    = FALSE)
+
+print(result)
+```
+
+The importance matrix rows are key driver variables and columns are methods. `am` (transmission) is a control: it is held fixed in every regression but excluded from the bivariate correlations.
+
+`wt` (weight) ranks first or second across nearly every method. `drat` (rear axle ratio) consistently ranks last. Cross-method agreement on rankings provides more confidence than any single method alone.
+
+Each method accepts a corresponding `_params` list for tuning. `rf_params = list(ntree = 1000)` above increases the number of trees from the default 500 for more stable importance estimates. Other useful params: `xgb_params = list(nrounds = 200, eta = 0.1)`, `shapex_params = list(nsim = 100)`.
+
+---
+
+## 2. Binary Outcome
+
+We binarize `mpg` at its median. Binary outcomes use logistic regression and McFadden pseudo-R² in place of linear regression and R².
+
+```{r}
+mtcars$high_mpg <- as.integer(mtcars$mpg > median(mtcars$mpg))
+
+result_bin <- kda(high_mpg ~ disp + hp + wt + drat,
+                  data    = mtcars,
+                  corr    = TRUE,
+                  beta    = TRUE,
+                  useful  = TRUE,
+                  shapley = TRUE,
+                  verbose = FALSE)
+
+print(result_bin)
+```
+
+`kda()` detects `high_mpg` as binary (0/1 numeric) and routes each method to the correct model automatically — no arguments change from the continuous case. Note that `jrw` is unavailable for binary outcomes and would return NAs if requested.
+
+---
+
+## 3. Ordinal Outcome
+
+We discretize `mpg` into three ordered tiers. Ordinal outcomes use proportional odds regression (`polr`) and McFadden pseudo-R².
+
+```{r}
+mtcars$mpg_tier <- cut(mtcars$mpg,
+                       breaks        = quantile(mtcars$mpg, c(0, 1/3, 2/3, 1)),
+                       labels        = c("low", "mid", "high"),
+                       include.lowest = TRUE)
+mtcars$mpg_tier <- factor(mtcars$mpg_tier, ordered = TRUE)
+
+result_ord <- kda(mpg_tier ~ disp + hp + wt + drat,
+                  data    = mtcars,
+                  corr    = TRUE,
+                  beta    = TRUE,
+                  useful  = TRUE,
+                  shapley = TRUE,
+                  verbose = FALSE)
+
+print(result_ord)
+```
+
+Ordinal x variables (if any) are automatically converted to integer ranks before being passed to regression models. Nominal (unordered factor) variables are blocked entirely — `kda()` stops with a clear message if one is supplied.
+
+---
+
+## Formula Syntax
+
+The pipe separator `|` partitions key drivers from control variables:
+
+```r
+kda(y ~ x1 + x2 + x3 | z1 + z2, data = df, ...)
+```
+
+Controls are included in every regression-based model but are not assigned importance scores. Their contribution to model fit is held constant before the key drivers are evaluated. Without controls, use the standard syntax:
+
+```r
+kda(y ~ x1 + x2 + x3, data = df, ...)
+```
