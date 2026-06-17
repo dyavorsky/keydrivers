@@ -14,7 +14,7 @@ for each method automatically.
 kda(form, data,
     corr = FALSE, beta = FALSE, useful = FALSE, jrw = FALSE,
     shapley = FALSE, shapex = FALSE, randforest = FALSE, xgboost_ = FALSE,
-    verbose = TRUE,
+    verbose = TRUE, normalize = TRUE,
     cor_params = list(), beta_params = list(), useful_params = list(),
     jrw_params = list(), shapley_params = list(), shapex_params = list(),
     rf_params = list(), xgb_params = list())
@@ -67,6 +67,14 @@ kda(form, data,
 \item{verbose}{Logical (default \code{TRUE}); print a summary header and
   per-method messages (sample size, model type, R²) to \code{stderr} via
   \code{message()}.}
+
+\item{normalize}{Logical (default \code{TRUE}); rescale each method's
+  importance scores so they sum to 100. This puts all methods on a common
+  percentage scale: a score of 25 means that variable accounts for 25\% of
+  the total importance for that method. For Shapley/LMG values this equals
+  the percentage of the full-model R² attributable to each predictor. Raw
+  (un-normalized) scores are preserved in the per-method metadata lists.
+  Set to \code{FALSE} to return scores on their native scale.}
 
 \item{cor_params}{Reserved for future use.}
 

@@ -41,7 +41,7 @@
 kda <- function(form, data,
                 corr=FALSE, beta=FALSE, useful=FALSE, jrw=FALSE,
                 shapley=FALSE, shapex=FALSE, randforest=FALSE, xgboost_=FALSE,
-                verbose=TRUE,
+                verbose=TRUE, normalize=TRUE,
                 cor_params=list(), beta_params=list(), useful_params=list(),
                 jrw_params=list(), shapley_params=list(), shapex_params=list(),
                 rf_params=list(), xgb_params=list()) {
@@ -143,7 +143,16 @@ kda <- function(form, data,
     importance_matrix <- cbind(importance_matrix, xgb_importance=xgb_result$importance)
   }
 
+  if (normalize) {
+    for (j in seq_len(ncol(importance_matrix))) {
+      col_sum <- sum(importance_matrix[, j], na.rm = TRUE)
+      if (!is.na(col_sum) && col_sum > 0)
+        importance_matrix[, j] <- importance_matrix[, j] / col_sum * 100
+    }
+  }
+
   results$importance <- importance_matrix
+  results$normalize  <- normalize
   results <- c(list(importance=results$importance), results[names(results) != "importance"])
   class(results) <- "kda"
 

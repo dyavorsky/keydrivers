@@ -1,7 +1,7 @@
 Package: keydrivers
 Type: Package
 Title: Key Drivers Analysis
-Version: 0.0.1
+Version: 0.0.2
 Date: 2026-06-11
 Authors@R: person(
     "Dan", "Yavorsky",
@@ -19,7 +19,8 @@ Imports:
     randomForest,
     xgboost,
     MASS,
-    fastshap
+    fastshap,
+    ggplot2
 Suggests:
     knitr,
     quarto

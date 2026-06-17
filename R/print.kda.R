@@ -7,7 +7,8 @@ print.kda <- function(x, digits=3, ...) {
   if (length(x$z_vars) > 0)
     cat("Controls:", paste(x$z_vars, collapse=", "), "\n")
 
-  cat("\nImportance:\n")
+  norm_note <- if (isTRUE(x$normalize)) " (% of total, sums to 100 per method)" else ""
+  cat("\nImportance:", norm_note, "\n", sep="")
   print(round(x$importance, digits))
 
   method_meta <- list(

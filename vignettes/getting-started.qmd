@@ -52,6 +52,8 @@ print(result)
 
 The importance matrix rows are key driver variables and columns are methods. `am` (transmission) is a control: it is held fixed in every regression but excluded from the bivariate correlations.
 
+By default (`normalize = TRUE`) each method's scores sum to 100. A score of 32 for `wt` under Shapley means weight accounts for 32% of the full model's R². This common scale makes cross-method comparison meaningful and is what the plot uses on its x-axis. Pass `normalize = FALSE` to recover raw scores.
+
 `wt` (weight) ranks first or second across nearly every method. `drat` (rear axle ratio) consistently ranks last. Cross-method agreement on rankings provides more confidence than any single method alone.
 
 Each method accepts a corresponding `_params` list for tuning. `rf_params = list(ntree = 1000)` above increases the number of trees from the default 500 for more stable importance estimates. Other useful params: `xgb_params = list(nrounds = 200, eta = 0.1)`, `shapex_params = list(nsim = 100)`.
@@ -125,6 +127,33 @@ print(result_boot)
 ```
 
 `print()` shows the full-data point estimates followed by the CIs. The `seed` argument makes results reproducible. For stochastic methods (RF, XGBoost, SHAP), reduce `ntree`, `nrounds`, or `nsim` when `B` is large to keep runtime manageable. The result object also exposes `result_boot$estimate` (the full-data `kda` object), `result_boot$ci_lower`, and `result_boot$ci_upper` for programmatic access.
+
+---
+
+## 5. Plotting
+
+`plot()` dispatches on `kda` and `kda_boot` objects. Drivers are ordered from most to least important on the vertical axis; each method gets its own color; CI lines appear automatically for `kda_boot` results.
+
+```{r}
+# Point estimates from the continuous example
+plot(result)
+```
+
+```{r}
+# Bootstrap result with CIs — custom colors and background
+plot(result_boot,
+     colors   = c(correlation = "steelblue", beta = "tomato",
+                  rf_importance = "forestgreen"),
+     bg_color = "#f8f8f8")
+```
+
+The returned object is a `ggplot` and can be extended with any ggplot2 layer:
+
+```{r}
+#| eval: false
+library(ggplot2)
+plot(result) + ggtitle("Key Drivers of Fuel Efficiency")
+```
 
 ---
 
