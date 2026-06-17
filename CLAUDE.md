@@ -46,10 +46,17 @@ devtools::test()
 
 ## Architecture
 
-The package follows a **main function + sub-method pattern**:
+The package follows a **main function + sub-method pattern**, with two additional top-level
+functions for bootstrapping and plotting:
 
 - **Main function**: `kda()` in [R/kda.R](R/kda.R) serves as the entry point, accepting a
-  formula, data, boolean flags for each analysis method, and `verbose=TRUE`
+  formula, data, boolean flags for each analysis method, `verbose=TRUE`, and `normalize=TRUE`
+- **Bootstrap wrapper**: `kda_boot()` in [R/kda_boot.R](R/kda_boot.R) calls `kda()` once on
+  the full data for point estimates, then B times on bootstrap resamples to compute percentile
+  CIs; returns a `"kda_boot"` object
+- **Plot methods**: `plot.kda()` and `plot.kda_boot()` in [R/plot.kda.R](R/plot.kda.R) produce
+  horizontal dot plots via ggplot2; drivers ordered top-to-bottom by mean importance; methods
+  colored; CI lines drawn for `kda_boot` objects
 - **Sub-functions**: Eight implemented methods, each in their own file:
   - `sub_cor.R` - Bivariate correlations: Pearson for continuous/binary pairs; polyserial or
     polychoric via `hetcor()` when any ordinal variable is involved
@@ -109,6 +116,15 @@ Control variables are used differently by method:
 
 Each sub-function returns `n` (sample size used) and `n_missing` (cases removed).
 
+### Normalization
+
+`kda()` accepts `normalize=TRUE` (default). When enabled, each method's importance column
+is rescaled so it sums to 100 after all sub-functions have run. A score of 25 means that
+variable accounts for 25% of total importance for that method. For Shapley/LMG, this equals
+the percentage of full-model R² attributed to each predictor. Raw scores are preserved in the
+per-method metadata lists (`result$shapley$importance`, etc.); only `result$importance` is
+normalized. Set `normalize=FALSE` to return raw scores.
+
 ### Verbose Output
 
 `kda()` accepts `verbose=TRUE` (default). When enabled, each sub-function emits
@@ -117,29 +133,51 @@ missing cases, and R² (or pseudo-R²). A summary header is also printed at the 
 
 ### Return Structure
 
-The function returns a list of class `"kda"` with a `print.kda()` S3 method:
+`kda()` returns a list of class `"kda"` with `print.kda()` and `plot.kda()` S3 methods:
 ```r
 list(
-  importance = matrix(...),  # Rows = x variables, Columns = enabled methods
+  importance = matrix(...),  # Rows = x variables, Columns = enabled methods (normalized if normalize=TRUE)
   formula = ...,             # Input formula
   y_var = "...",             # Outcome variable name
   x_vars = c(...),           # Key driver variable names
   z_vars = c(...),           # Control variable names (if any)
   y_type = "...",            # "continuous", "binary", or "ordinal"
   x_types = c(...),          # Named vector of x variable types
+  normalize = TRUE/FALSE,    # Whether importance matrix was normalized
   correlations = list(...),  # Metadata if corr=TRUE
   betas = list(...),         # Metadata if beta=TRUE
   # ... one element per enabled method
 )
 ```
 
+`kda_boot()` returns a list of class `"kda_boot"` with `print.kda_boot()` and
+`plot.kda_boot()` S3 methods:
+```r
+list(
+  estimate    = <kda object>,    # Full-data point estimates
+  ci_lower    = matrix(...),     # Lower CI bounds, same shape as estimate$importance
+  ci_upper    = matrix(...),     # Upper CI bounds
+  B           = <integer>,       # Successful bootstrap iterations
+  B_requested = <integer>,       # B argument as supplied
+  conf_level  = <numeric>        # Confidence level (e.g., 0.95)
+)
+```
+
 Each method's metadata list includes:
-- `importance`: Named vector of importance scores for x variables
+- `importance`: Named vector of raw (un-normalized) importance scores for x variables
 - `n`: Sample size used
 - `n_missing`: Number of cases removed due to missing values
 - `missing_strategy`: "pairwise" or "listwise"
 - `model_type`: Model fitted (e.g., "lm", "glm(binomial)", "polr")
 - Method-specific fields (e.g., `r2`, `ntree`, `nrounds`, `objective`)
+
+### Plotting
+
+`plot.kda(x, colors=NULL, bg_color="white")` and `plot.kda_boot(x, colors=NULL, bg_color="white")`
+produce ggplot2 horizontal dot plots. Drivers are ordered by mean normalized importance (largest
+at top). `colors` accepts a named or unnamed character vector to override the default palette.
+`bg_color` sets the panel and plot background. Both return a `ggplot` object that can be
+extended with additional ggplot2 layers. CI lines are drawn automatically for `kda_boot` objects.
 
 ### Parameter Passing
 
@@ -170,7 +208,7 @@ Shapley/LMG computation is implemented in a standalone companion package at `../
 
 ## Dependencies
 
-The package imports seven libraries (defined in [DESCRIPTION](DESCRIPTION)):
+The package imports eight libraries (defined in [DESCRIPTION](DESCRIPTION)):
 - `shapley` - Hand-rolled Shapley/LMG engine (companion package, `../shapley`)
 - `iopsych` - Johnson Relative Weights via `relWt()`
 - `polycor` - Polyserial and polychoric correlations via `hetcor()`
@@ -178,6 +216,7 @@ The package imports seven libraries (defined in [DESCRIPTION](DESCRIPTION)):
 - `xgboost` - Gradient boosting for variable importance
 - `MASS` - Ordinal regression via `polr()`
 - `fastshap` - SHAP values via `explain()`
+- `ggplot2` - Plotting via `plot.kda()` and `plot.kda_boot()`
 
 Functions are selectively imported via [NAMESPACE](NAMESPACE) using `importFrom()` directives.
 
@@ -196,6 +235,7 @@ remotes::install_github("dyavorsky/keydrivers")
 
 ## Package Metadata
 
+- Version: 0.0.2
 - Minimum R version: 4.1
 - License: MIT
 - Maintained by: Dan Yavorsky (dyavorsky@gmail.com)
