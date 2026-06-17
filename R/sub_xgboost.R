@@ -57,11 +57,11 @@ sub_xgboost <- function(y_var, x_vars, z_vars, data, y_type, params=list(), verb
   eta       <- if ("eta"        %in% names(params)) params$eta        else 0.3
 
   tryCatch({
-    dtrain     <- xgb.DMatrix(data=X, label=labels)
-    xgb_params <- list(objective=objective, max_depth=max_depth, eta=eta)
-    if (!is.null(num_class)) xgb_params$num_class <- num_class
+    xgb_args <- list(x=X, y=labels, objective=objective,
+                     nrounds=nrounds, max_depth=max_depth, learning_rate=eta, verbosity=0)
+    if (!is.null(num_class)) xgb_args$num_class <- num_class
 
-    xgb_model  <- xgboost(data=dtrain, params=xgb_params, nrounds=nrounds, verbose=0)
+    xgb_model  <- do.call(xgboost, xgb_args)
     imp_matrix <- xgb.importance(model=xgb_model)
 
     importance_scores <- setNames(numeric(length(all_predictors)), all_predictors)
