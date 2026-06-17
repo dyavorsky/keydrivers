@@ -23,6 +23,7 @@ print(result)
 
 
 ## -----------------------------------------------------------------------------
+#| warning: false
 mtcars$high_mpg <- as.integer(mtcars$mpg > median(mtcars$mpg))
 
 result_bin <- kda(high_mpg ~ disp + hp + wt + drat,

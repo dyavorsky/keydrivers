@@ -137,26 +137,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>Warning in value[[3L]](cond): Error computing Johnson Relative Weights: Invalid
 Correlation Matrix</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in throw_err_or_depr_msg("Parameter(s) have been removed from this
-function: ", : Parameter(s) have been removed from this function: params. This
-warning will become an error in a future version.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in throw_err_or_depr_msg("Passed unrecognized parameters: ",
-paste(head(names_unrecognized), : Passed unrecognized parameters: verbose. This
-warning will become an error in a future version.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in throw_err_or_depr_msg("Parameter '", match_old, "' has been renamed
-to '", : Parameter 'data' has been renamed to 'x'. This warning will become an
-error in a future version.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in value[[3L]](cond): Error computing XGBoost importance: argument "y"
-is missing, with no default</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Key Drivers Analysis
 -------------------------------------------------- 
@@ -167,15 +148,15 @@ Controls: am
 
 Importance: (% of total, sums to 100 per method)
      correlation   beta usefulness jrw shapley   shap rf_importance
-disp      26.715  8.549      1.092  NA  24.900  9.489        27.386
-hp        24.465 39.566     57.127  NA  36.308 40.321        30.221
-wt        27.349 42.962     38.210  NA  31.241 40.840        27.596
-drat      21.471  8.922      3.570  NA   7.552  9.350        14.797
+disp      26.715  8.549      1.092  NA  24.900  9.380        27.178
+hp        24.465 39.566     57.127  NA  36.308 40.368        29.657
+wt        27.349 42.962     38.210  NA  31.241 40.790        28.309
+drat      21.471  8.922      3.570  NA   7.552  9.463        14.856
      xgb_importance
-disp             NA
-hp               NA
-wt               NA
-drat             NA
+disp         76.798
+hp            6.839
+wt           16.357
+drat          0.006
 
 Method details:
   Correlations: n = 32, n = 32, n = 32, n = 32
@@ -185,7 +166,7 @@ Method details:
   Shapley/LMG: lm, n = 32, R² = 0.844
   SHAP: lm, n = 32, nsim = 100
   Random Forest: n = 32, ntree = 1000
-  XGBoost: n = 32</code></pre>
+  XGBoost: n = 32, nrounds = 100, reg:squarederror</code></pre>
 </div>
 </div>
 <p>The importance matrix rows are key driver variables and columns are methods. <code>am</code> (transmission) is a control: it is held fixed in every regression but excluded from the bivariate correlations.</p>
@@ -198,95 +179,17 @@ Method details:
 <h2 class="anchored" data-anchor-id="binary-outcome">2. Binary Outcome</h2>
 <p>We binarize <code>mpg</code> at its median. Binary outcomes use logistic regression and McFadden pseudo-R² in place of linear regression and R².</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mtcars<span class="sc">$</span>high_mpg <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(mtcars<span class="sc">$</span>mpg <span class="sc">&gt;</span> <span class="fu">median</span>(mtcars<span class="sc">$</span>mpg))</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>result_bin <span class="ot">&lt;-</span> <span class="fu">kda</span>(high_mpg <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data    =</span> mtcars,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">corr    =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">beta    =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">useful  =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">shapley =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
-Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: algorithm did not converge</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_bin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>mtcars<span class="sc">$</span>high_mpg <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(mtcars<span class="sc">$</span>mpg <span class="sc">&gt;</span> <span class="fu">median</span>(mtcars<span class="sc">$</span>mpg))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>result_bin <span class="ot">&lt;-</span> <span class="fu">kda</span>(high_mpg <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data    =</span> mtcars,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">corr    =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">beta    =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">useful  =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">shapley =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_bin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Key Drivers Analysis
 -------------------------------------------------- 
@@ -308,28 +211,28 @@ Method details:
   Shapley/LMG: glm(binomial), n = 32, R² = 1</code></pre>
 </div>
 </div>
-<p><code>kda()</code> detects <code>high_mpg</code> as binary (0/1 numeric) and routes each method to the correct model automatically — no arguments change from the continuous case. Note that <code>jrw</code> is unavailable for binary outcomes and would return NAs if requested.</p>
+<p><code>kda()</code> detects <code>high_mpg</code> as binary (0/1 numeric) and routes each method to the correct model automatically — no arguments change from the continuous case. Note that <code>jrw</code> is unavailable for binary outcomes and would return NAs if requested. The Shapley pseudo-R² of 1 reflects near-perfect separation in this small dataset — the four predictors collectively predict <code>high_mpg</code> with very high accuracy, which is expected for <code>mtcars</code>.</p>
 <hr>
 </section>
 <section id="ordinal-outcome" class="level2">
 <h2 class="anchored" data-anchor-id="ordinal-outcome">3. Ordinal Outcome</h2>
 <p>We discretize <code>mpg</code> into three ordered tiers. Ordinal outcomes use proportional odds regression (<code>polr</code>) and McFadden pseudo-R².</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>mtcars<span class="sc">$</span>mpg_tier <span class="ot">&lt;-</span> <span class="fu">cut</span>(mtcars<span class="sc">$</span>mpg,</span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                       <span class="at">breaks        =</span> <span class="fu">quantile</span>(mtcars<span class="sc">$</span>mpg, <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>, <span class="dv">2</span><span class="sc">/</span><span class="dv">3</span>, <span class="dv">1</span>)),</span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">labels        =</span> <span class="fu">c</span>(<span class="st">"low"</span>, <span class="st">"mid"</span>, <span class="st">"high"</span>),</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">include.lowest =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>mtcars<span class="sc">$</span>mpg_tier <span class="ot">&lt;-</span> <span class="fu">factor</span>(mtcars<span class="sc">$</span>mpg_tier, <span class="at">ordered =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>result_ord <span class="ot">&lt;-</span> <span class="fu">kda</span>(mpg_tier <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat,</span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data    =</span> mtcars,</span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">corr    =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>                  <span class="at">beta    =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>                  <span class="at">useful  =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>                  <span class="at">shapley =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>                  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_ord)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>mtcars<span class="sc">$</span>mpg_tier <span class="ot">&lt;-</span> <span class="fu">cut</span>(mtcars<span class="sc">$</span>mpg,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                       <span class="at">breaks        =</span> <span class="fu">quantile</span>(mtcars<span class="sc">$</span>mpg, <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>, <span class="dv">2</span><span class="sc">/</span><span class="dv">3</span>, <span class="dv">1</span>)),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">labels        =</span> <span class="fu">c</span>(<span class="st">"low"</span>, <span class="st">"mid"</span>, <span class="st">"high"</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">include.lowest =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>mtcars<span class="sc">$</span>mpg_tier <span class="ot">&lt;-</span> <span class="fu">factor</span>(mtcars<span class="sc">$</span>mpg_tier, <span class="at">ordered =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>result_ord <span class="ot">&lt;-</span> <span class="fu">kda</span>(mpg_tier <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data    =</span> mtcars,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">corr    =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                  <span class="at">beta    =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>                  <span class="at">useful  =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                  <span class="at">shapley =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_ord)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Key Drivers Analysis
 -------------------------------------------------- 
@@ -358,17 +261,17 @@ Method details:
 <h2 class="anchored" data-anchor-id="bootstrap-confidence-intervals">4. Bootstrap Confidence Intervals</h2>
 <p><code>kda_boot()</code> wraps <code>kda()</code> and runs it on <code>B</code> bootstrap resamples to produce percentile confidence intervals for every importance score. All method flags and <code>_params</code> arguments are passed through unchanged.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>result_boot <span class="ot">&lt;-</span> <span class="fu">kda_boot</span>(mpg <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat,</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data       =</span> mtcars,</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">B          =</span> <span class="dv">200</span>,</span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">conf_level =</span> <span class="fl">0.95</span>,</span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">seed       =</span> <span class="dv">42</span>,</span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">corr       =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">beta       =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">randforest =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">rf_params  =</span> <span class="fu">list</span>(<span class="at">ntree =</span> <span class="dv">500</span>))</span>
-<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_boot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>result_boot <span class="ot">&lt;-</span> <span class="fu">kda_boot</span>(mpg <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data       =</span> mtcars,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">B          =</span> <span class="dv">200</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">conf_level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">seed       =</span> <span class="dv">42</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">corr       =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">beta       =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                        <span class="at">randforest =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">rf_params  =</span> <span class="fu">list</span>(<span class="at">ntree =</span> <span class="dv">500</span>))</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_boot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Key Drivers Analysis (Bootstrap CIs, B = 200, 95% CI)
 -------------------------------------------------- 
@@ -398,8 +301,8 @@ drat [15.955, 24.055] [0.767, 30.381]  [13.023, 23.931]</code></pre>
 <h2 class="anchored" data-anchor-id="plotting">5. Plotting</h2>
 <p><code>plot()</code> dispatches on <code>kda</code> and <code>kda_boot</code> objects. Drivers are ordered from most to least important on the vertical axis; each method gets its own color; CI lines appear automatically for <code>kda_boot</code> results.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Point estimates from the continuous example</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Point estimates from the continuous example</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -409,14 +312,11 @@ drat [15.955, 24.055] [0.767, 30.381]  [13.023, 23.931]</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bootstrap result with CIs — custom colors and background</span></span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(result_boot,</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">colors   =</span> <span class="fu">c</span>(<span class="at">correlation =</span> <span class="st">"steelblue"</span>, <span class="at">beta =</span> <span class="st">"tomato"</span>,</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">rf_importance =</span> <span class="st">"forestgreen"</span>),</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">bg_color =</span> <span class="st">"#f8f8f8"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>`height` was translated to `width`.</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bootstrap result with CIs — custom colors and background</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(result_boot,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">colors   =</span> <span class="fu">c</span>(<span class="at">correlation =</span> <span class="st">"steelblue"</span>, <span class="at">beta =</span> <span class="st">"tomato"</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">rf_importance =</span> <span class="st">"forestgreen"</span>),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">bg_color =</span> <span class="st">"#f8f8f8"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -427,17 +327,17 @@ drat [15.955, 24.055] [0.767, 30.381]  [13.023, 23.931]</code></pre>
 </div>
 <p>The returned object is a <code>ggplot</code> and can be extended with any ggplot2 layer:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(result) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Key Drivers of Fuel Efficiency"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(result) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">"Key Drivers of Fuel Efficiency"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <hr>
 </section>
 <section id="formula-syntax" class="level2">
 <h2 class="anchored" data-anchor-id="formula-syntax">Formula Syntax</h2>
 <p>The pipe separator <code>|</code> partitions key drivers from control variables:</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3 <span class="sc">|</span> z1 <span class="sc">+</span> z2, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3 <span class="sc">|</span> z1 <span class="sc">+</span> z2, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Controls are included in every regression-based model but are not assigned importance scores. Their contribution to model fit is held constant before the key drivers are evaluated. Without controls, use the standard syntax:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 
 </main>

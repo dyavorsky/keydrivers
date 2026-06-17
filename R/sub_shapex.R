@@ -49,7 +49,7 @@ sub_shapex <- function(y_var, x_vars, z_vars, data, y_type, params=list(), verbo
     X    <- complete_data[, all_predictors, drop=FALSE]
     nsim <- if ("nsim" %in% names(params)) params$nsim else 100
 
-    shap_values    <- explain(model, X=X, pred_wrapper=pred_wrapper, nsim=nsim)
+    shap_values    <- suppressWarnings(explain(model, X=X, pred_wrapper=pred_wrapper, nsim=nsim))
     mean_abs_shap  <- colMeans(abs(shap_values))
     importance     <- mean_abs_shap[x_vars]
     names(importance) <- x_vars

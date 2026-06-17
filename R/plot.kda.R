@@ -74,7 +74,7 @@ plot.kda_boot <- function(x, y = NULL, colors = NULL, bg_color = "white", ...) {
   p <- ggplot(df, aes(x = importance, y = driver, color = method)) +
     geom_errorbarh(aes(xmin = ci_lower, xmax = ci_upper),
                    position = position_dodge(width = 0.5),
-                   height = 0, linewidth = 0.5) +
+                   width = 0, linewidth = 0.5) +
     geom_point(position = position_dodge(width = 0.5), size = 2.5) +
     labs(x = x_label, y = NULL, color = "Method")
 

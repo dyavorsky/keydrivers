@@ -65,6 +65,7 @@ Each method accepts a corresponding `_params` list for tuning. `rf_params = list
 We binarize `mpg` at its median. Binary outcomes use logistic regression and McFadden pseudo-R² in place of linear regression and R².
 
 ```{r}
+#| warning: false
 mtcars$high_mpg <- as.integer(mtcars$mpg > median(mtcars$mpg))
 
 result_bin <- kda(high_mpg ~ disp + hp + wt + drat,
@@ -78,7 +79,7 @@ result_bin <- kda(high_mpg ~ disp + hp + wt + drat,
 print(result_bin)
 ```
 
-`kda()` detects `high_mpg` as binary (0/1 numeric) and routes each method to the correct model automatically — no arguments change from the continuous case. Note that `jrw` is unavailable for binary outcomes and would return NAs if requested.
+`kda()` detects `high_mpg` as binary (0/1 numeric) and routes each method to the correct model automatically — no arguments change from the continuous case. Note that `jrw` is unavailable for binary outcomes and would return NAs if requested. The Shapley pseudo-R² of 1 reflects near-perfect separation in this small dataset — the four predictors collectively predict `high_mpg` with very high accuracy, which is expected for `mtcars`.
 
 ---
 
