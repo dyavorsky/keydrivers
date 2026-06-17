@@ -1,0 +1,88 @@
+## -----------------------------------------------------------------------------
+library(keydrivers)
+data(mtcars)
+
+x_vars <- c("disp", "hp", "wt", "drat")
+
+
+## -----------------------------------------------------------------------------
+result <- kda(mpg ~ disp + hp + wt + drat | am,
+              data       = mtcars,
+              corr       = TRUE,
+              beta       = TRUE,
+              useful     = TRUE,
+              jrw        = TRUE,
+              shapley    = TRUE,
+              shapex     = TRUE,
+              randforest = TRUE,
+              rf_params  = list(ntree = 1000),
+              xgboost_   = TRUE,
+              verbose    = FALSE)
+
+print(result)
+
+
+## -----------------------------------------------------------------------------
+mtcars$high_mpg <- as.integer(mtcars$mpg > median(mtcars$mpg))
+
+result_bin <- kda(high_mpg ~ disp + hp + wt + drat,
+                  data    = mtcars,
+                  corr    = TRUE,
+                  beta    = TRUE,
+                  useful  = TRUE,
+                  shapley = TRUE,
+                  verbose = FALSE)
+
+print(result_bin)
+
+
+## -----------------------------------------------------------------------------
+mtcars$mpg_tier <- cut(mtcars$mpg,
+                       breaks        = quantile(mtcars$mpg, c(0, 1/3, 2/3, 1)),
+                       labels        = c("low", "mid", "high"),
+                       include.lowest = TRUE)
+mtcars$mpg_tier <- factor(mtcars$mpg_tier, ordered = TRUE)
+
+result_ord <- kda(mpg_tier ~ disp + hp + wt + drat,
+                  data    = mtcars,
+                  corr    = TRUE,
+                  beta    = TRUE,
+                  useful  = TRUE,
+                  shapley = TRUE,
+                  verbose = FALSE)
+
+print(result_ord)
+
+
+## -----------------------------------------------------------------------------
+result_boot <- kda_boot(mpg ~ disp + hp + wt + drat,
+                        data       = mtcars,
+                        B          = 200,
+                        conf_level = 0.95,
+                        seed       = 42,
+                        corr       = TRUE,
+                        beta       = TRUE,
+                        randforest = TRUE,
+                        rf_params  = list(ntree = 500))
+
+print(result_boot)
+
+
+## -----------------------------------------------------------------------------
+# Point estimates from the continuous example
+plot(result)
+
+
+## -----------------------------------------------------------------------------
+# Bootstrap result with CIs — custom colors and background
+plot(result_boot,
+     colors   = c(correlation = "steelblue", beta = "tomato",
+                  rf_importance = "forestgreen"),
+     bg_color = "#f8f8f8")
+
+
+## -----------------------------------------------------------------------------
+#| eval: false
+# library(ggplot2)
+# plot(result) + ggtitle("Key Drivers of Fuel Efficiency")
+
