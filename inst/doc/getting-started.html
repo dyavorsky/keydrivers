@@ -148,10 +148,10 @@ Controls: am
 
 Importance: (% of total, sums to 100 per method)
      correlation   beta usefulness jrw shapley   shap rf_importance
-disp      26.715  8.549      1.092  NA  24.900  9.380        27.178
-hp        24.465 39.566     57.127  NA  36.308 40.368        29.657
-wt        27.349 42.962     38.210  NA  31.241 40.790        28.309
-drat      21.471  8.922      3.570  NA   7.552  9.463        14.856
+disp      26.715  8.549      1.092  NA  24.900  9.436        27.411
+hp        24.465 39.566     57.127  NA  36.308 40.347        29.311
+wt        27.349 42.962     38.210  NA  31.241 40.946        28.404
+drat      21.471  8.922      3.570  NA   7.552  9.271        14.874
      xgb_importance
 disp         76.798
 hp            6.839
@@ -332,12 +332,106 @@ drat [15.955, 24.055] [0.767, 30.381]  [13.023, 23.931]</code></pre>
 </div>
 <hr>
 </section>
+<section id="interpreting-results-when-methods-disagree" class="level2">
+<h2 class="anchored" data-anchor-id="interpreting-results-when-methods-disagree">6. Interpreting Results When Methods Disagree</h2>
+<p>Running eight methods and getting eight identical rankings would be suspicious. Some disagreement is normal and informative. The key is knowing what each method is measuring and what divergence between them is telling you.</p>
+<section id="why-methods-differ" class="level3">
+<h3 class="anchored" data-anchor-id="why-methods-differ">Why methods differ</h3>
+<p>Each method answers a subtly different question:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 68%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>What it measures</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Correlations</td>
+<td>Raw bivariate association — each predictor vs.&nbsp;outcome in isolation</td>
+</tr>
+<tr class="even">
+<td>Betas</td>
+<td>Partial association — each predictor controlling for all others simultaneously</td>
+</tr>
+<tr class="odd">
+<td>Usefulness</td>
+<td>Marginal R² contribution — fit loss when this variable is removed</td>
+</tr>
+<tr class="even">
+<td>JRW / Shapley</td>
+<td>Fair partition of total R² across predictors, averaging over all orderings</td>
+</tr>
+<tr class="odd">
+<td>RF / XGBoost</td>
+<td>Non-linear and interaction-aware importance</td>
+</tr>
+</tbody>
+</table>
+<p>These are genuinely different questions. A variable can rank high on one and low on another without either answer being wrong.</p>
+</section>
+<section id="what-divergence-usually-means" class="level3">
+<h3 class="anchored" data-anchor-id="what-divergence-usually-means">What divergence usually means</h3>
+<p><strong>Correlations high, Shapley/usefulness low</strong>: the variable shares its predictive power with another predictor. Both are measuring the same underlying construct. JRW and Shapley will split the shared credit between them rather than double-counting.</p>
+<p><strong>Betas in a different order than correlations</strong>: a suppressor or multicollinearity pattern. A variable can have a modest bivariate correlation but become important once others are held constant (or vice versa). This is a real finding about the structure of the data, not a modeling artifact.</p>
+<p><strong>Tree methods (RF, XGBoost) diverge from linear methods (Shapley, betas, usefulness)</strong>: the relationship is probably non-linear or involves interactions between predictors. The linear methods fit a straight line and apportion its R²; the tree methods are picking up curvature or conditional structure that the line misses.</p>
+<p><strong>Methods largely agree</strong>: convergent evidence. Variables that rank consistently high across multiple methods are the most defensible findings.</p>
+</section>
+<section id="investigating-a-lineartree-divergence" class="level3">
+<h3 class="anchored" data-anchor-id="investigating-a-lineartree-divergence">Investigating a linear/tree divergence</h3>
+<p>When Shapley and RF give meaningfully different rankings for a variable, work through these steps:</p>
+<p><strong>1. Plot each predictor against the outcome with a smooth.</strong> A LOESS curve that departs from a straight line flags non-linearity directly.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (v <span class="cf">in</span> <span class="fu">c</span>(<span class="st">"disp"</span>, <span class="st">"hp"</span>, <span class="st">"wt"</span>, <span class="st">"drat"</span>)) {</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(mtcars, <span class="fu">aes</span>(<span class="at">x =</span> .data[[v]], <span class="at">y =</span> mpg)) <span class="sc">+</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggtitle</span>(v)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(p)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>2. Partial dependence plots from the RF model.</strong> A PDP shows the RF’s view of the functional form for each predictor, marginalizing over all others. A curved or step-shaped PDP confirms non-linearity. A flat PDP for a predictor the RF ranks highly suggests an interaction (the variable matters, but only conditionally).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(randomForest)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pdp)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>rf_model <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(mpg <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat, <span class="at">data =</span> mtcars, <span class="at">ntree =</span> <span class="dv">1000</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">partial</span>(rf_model, <span class="at">pred.var =</span> <span class="st">"wt"</span>, <span class="at">plot =</span> <span class="cn">TRUE</span>, <span class="at">rug =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>3. Compare linear model R² to a GAM.</strong> A GAM fits a smooth function to each predictor instead of a straight line. If the GAM’s R² is meaningfully higher, the linear model is missing real structure and the Shapley values based on it are understating variables with curved relationships.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>m_lm  <span class="ot">&lt;-</span> <span class="fu">lm</span>(mpg <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat, <span class="at">data =</span> mtcars)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>m_gam <span class="ot">&lt;-</span> <span class="fu">gam</span>(mpg <span class="sc">~</span> <span class="fu">s</span>(disp) <span class="sc">+</span> <span class="fu">s</span>(hp) <span class="sc">+</span> <span class="fu">s</span>(wt) <span class="sc">+</span> <span class="fu">s</span>(drat), <span class="at">data =</span> mtcars)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m_lm)<span class="sc">$</span>r.squared</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m_gam)<span class="sc">$</span>r.sq   <span class="co"># materially higher = non-linearity matters</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>4. Test for interactions.</strong> If the PDPs look roughly linear but RF still diverges, the likely culprit is an interaction — one variable’s effect depends on the level of another. A 2D partial dependence plot reveals this: a non-flat surface indicates the two variables interact.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">partial</span>(rf_model, <span class="at">pred.var =</span> <span class="fu">c</span>(<span class="st">"wt"</span>, <span class="st">"hp"</span>), <span class="at">plot =</span> <span class="cn">TRUE</span>, <span class="at">chull =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Confirm with a formal test in the linear model</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>m_int <span class="ot">&lt;-</span> <span class="fu">lm</span>(mpg <span class="sc">~</span> disp <span class="sc">+</span> hp <span class="sc">+</span> wt <span class="sc">+</span> drat <span class="sc">+</span> wt<span class="sc">:</span>hp, <span class="at">data =</span> mtcars)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(m_lm, m_int)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<hr>
+</section>
+</section>
 <section id="formula-syntax" class="level2">
 <h2 class="anchored" data-anchor-id="formula-syntax">Formula Syntax</h2>
 <p>The pipe separator <code>|</code> partitions key drivers from control variables:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3 <span class="sc">|</span> z1 <span class="sc">+</span> z2, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3 <span class="sc">|</span> z1 <span class="sc">+</span> z2, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Controls are included in every regression-based model but are not assigned importance scores. Their contribution to model fit is held constant before the key drivers are evaluated. Without controls, use the standard syntax:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kda</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3, <span class="at">data =</span> df, ...)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 
 </main>

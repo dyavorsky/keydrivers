@@ -158,6 +158,95 @@ plot(result) + ggtitle("Key Drivers of Fuel Efficiency")
 
 ---
 
+## 6. Interpreting Results When Methods Disagree
+
+Running eight methods and getting eight identical rankings would be suspicious. Some disagreement is normal and informative. The key is knowing what each method is measuring and what divergence between them is telling you.
+
+### Why methods differ
+
+Each method answers a subtly different question:
+
+| Method | What it measures |
+|--------|-----------------|
+| Correlations | Raw bivariate association — each predictor vs. outcome in isolation |
+| Betas | Partial association — each predictor controlling for all others simultaneously |
+| Usefulness | Marginal R² contribution — fit loss when this variable is removed |
+| JRW / Shapley | Fair partition of total R² across predictors, averaging over all orderings |
+| RF / XGBoost | Non-linear and interaction-aware importance |
+
+These are genuinely different questions. A variable can rank high on one and low on another without either answer being wrong.
+
+### What divergence usually means
+
+**Correlations high, Shapley/usefulness low**: the variable shares its predictive power with another predictor. Both are measuring the same underlying construct. JRW and Shapley will split the shared credit between them rather than double-counting.
+
+**Betas in a different order than correlations**: a suppressor or multicollinearity pattern. A variable can have a modest bivariate correlation but become important once others are held constant (or vice versa). This is a real finding about the structure of the data, not a modeling artifact.
+
+**Tree methods (RF, XGBoost) diverge from linear methods (Shapley, betas, usefulness)**: the relationship is probably non-linear or involves interactions between predictors. The linear methods fit a straight line and apportion its R²; the tree methods are picking up curvature or conditional structure that the line misses.
+
+**Methods largely agree**: convergent evidence. Variables that rank consistently high across multiple methods are the most defensible findings.
+
+### Investigating a linear/tree divergence
+
+When Shapley and RF give meaningfully different rankings for a variable, work through these steps:
+
+**1. Plot each predictor against the outcome with a smooth.**
+A LOESS curve that departs from a straight line flags non-linearity directly.
+
+```{r}
+#| eval: false
+library(ggplot2)
+
+for (v in c("disp", "hp", "wt", "drat")) {
+  p <- ggplot(mtcars, aes(x = .data[[v]], y = mpg)) +
+    geom_point() +
+    geom_smooth(method = "loess", se = TRUE) +
+    geom_smooth(method = "lm", se = FALSE, color = "red", linetype = "dashed") +
+    ggtitle(v)
+  print(p)
+}
+```
+
+**2. Partial dependence plots from the RF model.**
+A PDP shows the RF's view of the functional form for each predictor, marginalizing over all others. A curved or step-shaped PDP confirms non-linearity. A flat PDP for a predictor the RF ranks highly suggests an interaction (the variable matters, but only conditionally).
+
+```{r}
+#| eval: false
+library(randomForest)
+library(pdp)
+
+rf_model <- randomForest(mpg ~ disp + hp + wt + drat, data = mtcars, ntree = 1000)
+partial(rf_model, pred.var = "wt", plot = TRUE, rug = TRUE)
+```
+
+**3. Compare linear model R² to a GAM.**
+A GAM fits a smooth function to each predictor instead of a straight line. If the GAM's R² is meaningfully higher, the linear model is missing real structure and the Shapley values based on it are understating variables with curved relationships.
+
+```{r}
+#| eval: false
+library(mgcv)
+
+m_lm  <- lm(mpg ~ disp + hp + wt + drat, data = mtcars)
+m_gam <- gam(mpg ~ s(disp) + s(hp) + s(wt) + s(drat), data = mtcars)
+
+summary(m_lm)$r.squared
+summary(m_gam)$r.sq   # materially higher = non-linearity matters
+```
+
+**4. Test for interactions.**
+If the PDPs look roughly linear but RF still diverges, the likely culprit is an interaction — one variable's effect depends on the level of another. A 2D partial dependence plot reveals this: a non-flat surface indicates the two variables interact.
+
+```{r}
+#| eval: false
+partial(rf_model, pred.var = c("wt", "hp"), plot = TRUE, chull = TRUE)
+
+# Confirm with a formal test in the linear model
+m_int <- lm(mpg ~ disp + hp + wt + drat + wt:hp, data = mtcars)
+anova(m_lm, m_int)
+```
+
+---
+
 ## Formula Syntax
 
 The pipe separator `|` partitions key drivers from control variables:
