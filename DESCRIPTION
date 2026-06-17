@@ -1,0 +1,22 @@
+Package: keydrivers
+Type: Package
+Title: Key Drivers Analysis
+Version: 0.0.1
+Date: 2026-06-11
+Authors@R: person(
+    "Dan", "Yavorsky",
+    role = c("aut", "cre", "cph"),
+    email = "dyavorsky@gmail.com"
+    )
+Description: Facilitates execution of several methods for key drivers analysis.
+License: MIT
+Encoding: UTF-8
+Depends: R (>= 4.1)
+Imports:
+    shapley,
+    iopsych,
+    polycor,
+    randomForest,
+    xgboost,
+    MASS,
+    fastshap
