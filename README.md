@@ -48,6 +48,26 @@ The formula `y ~ x1 + x2 + x3 | z1 + z2` optionally separates key driver variabl
 | `randforest` | Random forest importance | randomForest |
 | `xgboost_` | XGBoost gain importance | xgboost |
 
+## Bootstrap Confidence Intervals
+
+`kda_boot()` wraps `kda()` to add percentile bootstrap CIs for every importance score:
+
+```r
+result <- kda_boot(mpg ~ disp + hp + wt + drat,
+                   data       = mtcars,
+                   B          = 200,
+                   conf_level = 0.95,
+                   seed       = 42,
+                   corr       = TRUE,
+                   beta       = TRUE,
+                   randforest = TRUE,
+                   rf_params  = list(ntree = 500))
+
+print(result)
+```
+
+`B` controls the number of resamples; `seed` makes results reproducible. For stochastic methods (RF, XGBoost, SHAP), reduce per-iteration cost with smaller `ntree`, `nrounds`, or `nsim` when `B` is large.
+
 ## Variable Types
 
 Variables are typed automatically from their R class:

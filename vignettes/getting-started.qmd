@@ -106,6 +106,28 @@ Ordinal x variables (if any) are automatically converted to integer ranks before
 
 ---
 
+## 4. Bootstrap Confidence Intervals
+
+`kda_boot()` wraps `kda()` and runs it on `B` bootstrap resamples to produce percentile confidence intervals for every importance score. All method flags and `_params` arguments are passed through unchanged.
+
+```{r}
+result_boot <- kda_boot(mpg ~ disp + hp + wt + drat,
+                        data       = mtcars,
+                        B          = 200,
+                        conf_level = 0.95,
+                        seed       = 42,
+                        corr       = TRUE,
+                        beta       = TRUE,
+                        randforest = TRUE,
+                        rf_params  = list(ntree = 500))
+
+print(result_boot)
+```
+
+`print()` shows the full-data point estimates followed by the CIs. The `seed` argument makes results reproducible. For stochastic methods (RF, XGBoost, SHAP), reduce `ntree`, `nrounds`, or `nsim` when `B` is large to keep runtime manageable. The result object also exposes `result_boot$estimate` (the full-data `kda` object), `result_boot$ci_lower`, and `result_boot$ci_upper` for programmatic access.
+
+---
+
 ## Formula Syntax
 
 The pipe separator `|` partitions key drivers from control variables:
