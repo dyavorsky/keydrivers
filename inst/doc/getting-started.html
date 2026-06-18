@@ -154,23 +154,18 @@ Outcome: mpg (continuous)
 Drivers: disp (continuous), hp (continuous), wt (continuous), drat (continuous)
 
 Importance: (% of total, sums to 100 per method)
-     correlation   beta usefulness jrw shapley   shap rf_importance
-disp      26.715  6.560      0.585  NA  26.411  7.036        27.957
-hp        24.465 33.087     42.179  NA  25.036 33.991        29.062
-wt        27.349 47.237     48.821  NA  32.403 45.308        27.594
-drat      21.471 13.116      8.415  NA  16.150 13.665        15.388
-     xgb_importance
-disp         76.798
-hp            6.839
-wt           16.357
-drat          0.006
+      corr  beta usefulness jrw shapley  shap    rf   xgb
+disp 26.72  6.56       0.58  NA   26.41  7.33 26.58 76.80
+hp   24.47 33.09      42.18  NA   25.04 34.12 30.15  6.84
+wt   27.35 47.24      48.82  NA   32.40 44.51 28.55 16.36
+drat 21.47 13.12       8.42  NA   16.15 14.04 14.72  0.01
 
 Method details:
   Correlations: n = 32, n = 32, n = 32, n = 32
-  Standardized Betas: lm, n = 32, R² = 0.838
-  Usefulness: n = 32, R² = 0.838, R² = 0.838
+  Standardized Betas: lm, n = 32, R² = 0.84
+  Usefulness: n = 32, R² = 0.84, R² = 0.84
   Johnson Relative Weights: n = 32
-  Shapley/LMG: lm, n = 32, R² = 0.838
+  Shapley/LMG: lm, n = 32, R² = 0.84
   SHAP: lm, n = 32, nsim = 100
   Random Forest: n = 32, ntree = 1000
   XGBoost: n = 32, nrounds = 100, reg:squarederror</code></pre>
@@ -190,11 +185,10 @@ Method details:
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data    =</span> mtcars,</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">corr    =</span> <span class="cn">TRUE</span>,</span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">beta    =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">useful  =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">shapley =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_bin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">shapley =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(result_bin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Key Drivers Analysis
 -------------------------------------------------- 
@@ -203,20 +197,20 @@ Outcome: high_mpg (binary)
 Drivers: disp (continuous), hp (continuous), wt (continuous), drat (continuous)
 
 Importance: (% of total, sums to 100 per method)
-     correlation   beta usefulness shapley
-disp      27.682 13.953          0  22.955
-hp        24.882 19.613          0  18.748
-wt        25.801 62.811        100  47.869
-drat      21.634  3.623          0  10.429
+      corr  beta shapley
+disp 27.68 13.95   22.95
+hp   24.88 19.61   18.75
+wt   25.80 62.81   47.87
+drat 21.63  3.62   10.43
 
 Method details:
   Correlations: n = 32, n = 32, n = 32, n = 32
   Standardized Betas: glm_binomial, n = 32, R² = 1
-  Usefulness: n = 32, R² = 1, R² = 1
   Shapley/LMG: glm(binomial), n = 32, R² = 1</code></pre>
 </div>
 </div>
 <p>The warnings suppressed above arise because the median split on this small dataset produces near-perfect separation — the four predictors collectively classify <code>high_mpg</code> with very high accuracy. This is an artifact of the toy data; in practice, logistic regression warnings of this kind warrant investigation but do not invalidate the importance scores.</p>
+<p>Note that <code>useful</code> is omitted here. For this particular dataset the full logistic model achieves a McFadden pseudo-R² of 1.0 (perfect fit), so removing <code>disp</code>, <code>hp</code>, or <code>drat</code> leaves <code>wt</code> alone to still achieve perfect fit — their ΔR² is exactly 0. This produces a normalized usefulness of 100 for <code>wt</code> and 0 for everything else, which is mathematically correct but not informative for a demonstration. In real data with genuine uncertainty, usefulness works as expected for binary outcomes.</p>
 <hr>
 </section>
 <section id="ordinal-outcome" class="level2">
@@ -247,17 +241,17 @@ Outcome: mpg_tier (ordinal)
 Drivers: disp (continuous), hp (continuous), wt (continuous), drat (continuous)
 
 Importance: (% of total, sums to 100 per method)
-     correlation   beta usefulness shapley
-disp      27.343  4.963      0.448  24.488
-hp        27.176 54.344     71.003  41.464
-wt        25.429 26.025     21.484  25.147
-drat      20.052 14.668      7.065   8.901
+      corr  beta usefulness shapley
+disp 27.34  4.96       0.45   24.49
+hp   27.18 54.34      71.00   41.46
+wt   25.43 26.03      21.48   25.15
+drat 20.05 14.67       7.07    8.90
 
 Method details:
   Correlations: n = 32, n = 32, n = 32, n = 32
-  Standardized Betas: polr, n = 32, R² = 0.694
-  Usefulness: n = 32, R² = 0.694, R² = 0.694
-  Shapley/LMG: polr, n = 32, R² = 0.694</code></pre>
+  Standardized Betas: polr, n = 32, R² = 0.69
+  Usefulness: n = 32, R² = 0.69, R² = 0.69
+  Shapley/LMG: polr, n = 32, R² = 0.69</code></pre>
 </div>
 </div>
 <hr>
@@ -286,18 +280,25 @@ Outcome: mpg (continuous)
 Drivers: disp (continuous), hp (continuous), wt (continuous), drat (continuous)
 
 Point Estimates:
-     correlation   beta rf_importance
-disp      26.715  6.560        29.100
-hp        24.465 33.087        27.354
-wt        27.349 47.237        26.600
-drat      21.471 13.116        16.946
+      corr  beta    rf
+disp 26.72  6.56 29.10
+hp   24.47 33.09 27.35
+wt   27.35 47.24 26.60
+drat 21.47 13.12 16.95
 
-95% Confidence Intervals:
-     correlation      beta             rf_importance   
-disp [24.647, 28.946] [1.083, 27.575]  [24.267, 29.868]
-hp   [22.452, 26.978] [18.934, 44.809] [23.625, 32.631]
-wt   [25.547, 29.817] [18.963, 61.071] [23.288, 29.081]
-drat [15.955, 24.055] [0.767, 30.381]  [13.023, 23.931]</code></pre>
+95% Confidence Intervals — Lower (2.5%):
+      corr  beta    rf
+disp 24.65  1.08 24.27
+hp   22.45 18.93 23.62
+wt   25.55 18.96 23.29
+drat 15.96  0.77 13.02
+
+95% Confidence Intervals — Upper (97.5%):
+      corr  beta    rf
+disp 28.95 27.58 29.87
+hp   26.98 44.81 32.63
+wt   29.82 61.07 29.08
+drat 24.06 30.38 23.93</code></pre>
 </div>
 </div>
 <p>The result object exposes <code>result_boot$estimate</code> (the full-data <code>kda</code> object), <code>result_boot$ci_lower</code>, and <code>result_boot$ci_upper</code> for programmatic access.</p>

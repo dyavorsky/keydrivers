@@ -86,7 +86,6 @@ result_bin <- kda(high_mpg ~ disp + hp + wt + drat,
                   data    = mtcars,
                   corr    = TRUE,
                   beta    = TRUE,
-                  useful  = TRUE,
                   shapley = TRUE,
                   verbose = FALSE)
 
@@ -94,6 +93,8 @@ print(result_bin)
 ```
 
 The warnings suppressed above arise because the median split on this small dataset produces near-perfect separation — the four predictors collectively classify `high_mpg` with very high accuracy. This is an artifact of the toy data; in practice, logistic regression warnings of this kind warrant investigation but do not invalidate the importance scores.
+
+Note that `useful` is omitted here. For this particular dataset the full logistic model achieves a McFadden pseudo-R² of 1.0 (perfect fit), so removing `disp`, `hp`, or `drat` leaves `wt` alone to still achieve perfect fit — their ΔR² is exactly 0. This produces a normalized usefulness of 100 for `wt` and 0 for everything else, which is mathematically correct but not informative for a demonstration. In real data with genuine uncertainty, usefulness works as expected for binary outcomes.
 
 ---
 

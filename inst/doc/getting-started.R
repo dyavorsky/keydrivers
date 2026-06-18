@@ -28,7 +28,6 @@ result_bin <- kda(high_mpg ~ disp + hp + wt + drat,
                   data    = mtcars,
                   corr    = TRUE,
                   beta    = TRUE,
-                  useful  = TRUE,
                   shapley = TRUE,
                   verbose = FALSE)
 
