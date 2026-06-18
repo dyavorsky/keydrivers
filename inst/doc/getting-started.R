@@ -2,11 +2,9 @@
 library(keydrivers)
 data(mtcars)
 
-x_vars <- c("disp", "hp", "wt", "drat")
-
 
 ## -----------------------------------------------------------------------------
-result <- kda(mpg ~ disp + hp + wt + drat | am,
+result <- kda(mpg ~ disp + hp + wt + drat,
               data       = mtcars,
               corr       = TRUE,
               beta       = TRUE,
@@ -39,8 +37,8 @@ print(result_bin)
 
 ## -----------------------------------------------------------------------------
 mtcars$mpg_tier <- cut(mtcars$mpg,
-                       breaks        = quantile(mtcars$mpg, c(0, 1/3, 2/3, 1)),
-                       labels        = c("low", "mid", "high"),
+                       breaks         = quantile(mtcars$mpg, c(0, 1/3, 2/3, 1)),
+                       labels         = c("low", "mid", "high"),
                        include.lowest = TRUE)
 mtcars$mpg_tier <- factor(mtcars$mpg_tier, ordered = TRUE)
 
@@ -77,8 +75,7 @@ plot(result)
 ## -----------------------------------------------------------------------------
 # Bootstrap result with CIs — custom colors and background
 plot(result_boot,
-     colors   = c(correlation = "steelblue", beta = "tomato",
-                  rf_importance = "forestgreen"),
+     colors   = c(corr = "steelblue", beta = "tomato", rf = "forestgreen"),
      bg_color = "#f8f8f8")
 
 

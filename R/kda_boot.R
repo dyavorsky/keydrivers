@@ -75,7 +75,7 @@ kda_boot <- function(form, data, B = 200, conf_level = 0.95, seed = NULL, ...) {
 }
 
 
-print.kda_boot <- function(x, digits = 3, ...) {
+print.kda_boot <- function(x, digits = 2, ...) {
   est   <- x$estimate
   pct   <- round(x$conf_level * 100)
   B_str <- if (x$B < x$B_requested)
@@ -94,14 +94,12 @@ print.kda_boot <- function(x, digits = 3, ...) {
   cat("\nPoint Estimates:\n")
   print(round(est$importance, digits))
 
-  cat("\n", pct, "% Confidence Intervals:\n", sep = "")
-  ci_mat <- matrix(
-    paste0("[", round(x$ci_lower, digits), ", ", round(x$ci_upper, digits), "]"),
-    nrow     = nrow(x$ci_lower),
-    ncol     = ncol(x$ci_lower),
-    dimnames = dimnames(x$ci_lower)
-  )
-  print(ci_mat, quote = FALSE)
+  alpha_lo <- round((1 - x$conf_level) / 2 * 100, 1)
+  alpha_hi <- 100 - alpha_lo
+  cat("\n", pct, "% Confidence Intervals — Lower (", alpha_lo, "%):\n", sep = "")
+  print(round(x$ci_lower, digits))
+  cat("\n", pct, "% Confidence Intervals — Upper (", alpha_hi, "%):\n", sep = ""  )
+  print(round(x$ci_upper, digits))
 
   invisible(x)
 }

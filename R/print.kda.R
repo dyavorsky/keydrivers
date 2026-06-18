@@ -1,4 +1,4 @@
-print.kda <- function(x, digits=3, ...) {
+print.kda <- function(x, digits=2, ...) {
   cat("Key Drivers Analysis\n")
   cat(strrep("-", 50), "\n")
   cat("Formula: ", deparse(x$formula), "\n", sep="")

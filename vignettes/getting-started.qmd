@@ -13,28 +13,46 @@ vignette: >
 This vignette uses the `mtcars` dataset (included in base R) to demonstrate three scenarios:
 
 1. **Continuous outcome** — all eight methods on `mpg`
-2. **Binary outcome** — key methods on a binarized version of `mpg`
-3. **Ordinal outcome** — key methods on a discretized version of `mpg`
+2. **Binary outcome** — selected methods on a binarized version of `mpg`
+3. **Ordinal outcome** — selected methods on a discretized version of `mpg`
 
 ## Setup
 
 ```{r}
 library(keydrivers)
 data(mtcars)
-
-x_vars <- c("disp", "hp", "wt", "drat")
 ```
 
-`mtcars` contains performance and design data for 32 cars. We use fuel efficiency (`mpg`) as the outcome and four mechanical predictors as key drivers. Transmission type (`am`) will serve as a control variable in the continuous example.
+`mtcars` contains performance and design data for 32 cars. We use fuel efficiency (`mpg`) as the outcome and four mechanical predictors as key drivers: displacement (`disp`), horsepower (`hp`), weight (`wt`), and rear axle ratio (`drat`).
+
+---
+
+## Formula Syntax
+
+The basic formula is `y ~ x1 + x2 + x3`, where `y` is the outcome and `x1`, `x2`, `x3` are the key drivers whose importance will be measured.
+
+An optional pipe separator `|` partitions key drivers from control variables:
+
+```r
+kda(y ~ x1 + x2 + x3 | z1 + z2, data = df, ...)
+```
+
+Control variables are included in every regression-based model but are not assigned importance scores — their contribution to model fit is held constant so that driver importance is assessed net of those controls. Bivariate correlations (`corr`) never include controls. Without controls, use standard formula syntax:
+
+```r
+kda(y ~ x1 + x2 + x3, data = df, ...)
+```
 
 ---
 
 ## 1. Continuous Outcome
 
-With a continuous outcome, all eight methods are available. Regression-based methods use linear regression and R².
+With a continuous outcome, all eight methods are available. Regression-based methods fit a linear model (`lm`) and apportion R². By default (`normalize = TRUE`) each method's scores are rescaled to sum to 100, so a score of 32 for `wt` under Shapley means weight accounts for 32% of the full model's R². This common scale makes cross-method comparison meaningful; pass `normalize = FALSE` to recover raw scores.
+
+Each method accepts a corresponding `_params` list for tuning. For example, `rf_params = list(ntree = 1000)` increases the number of trees for more stable importance estimates.
 
 ```{r}
-result <- kda(mpg ~ disp + hp + wt + drat | am,
+result <- kda(mpg ~ disp + hp + wt + drat,
               data       = mtcars,
               corr       = TRUE,
               beta       = TRUE,
@@ -50,19 +68,15 @@ result <- kda(mpg ~ disp + hp + wt + drat | am,
 print(result)
 ```
 
-The importance matrix rows are key driver variables and columns are methods. `am` (transmission) is a control: it is held fixed in every regression but excluded from the bivariate correlations.
-
-By default (`normalize = TRUE`) each method's scores sum to 100. A score of 32 for `wt` under Shapley means weight accounts for 32% of the full model's R². This common scale makes cross-method comparison meaningful and is what the plot uses on its x-axis. Pass `normalize = FALSE` to recover raw scores.
-
-`wt` (weight) ranks first or second across nearly every method. `drat` (rear axle ratio) consistently ranks last. Cross-method agreement on rankings provides more confidence than any single method alone.
-
-Each method accepts a corresponding `_params` list for tuning. `rf_params = list(ntree = 1000)` above increases the number of trees from the default 500 for more stable importance estimates. Other useful params: `xgb_params = list(nrounds = 200, eta = 0.1)`, `shapex_params = list(nsim = 100)`.
+`wt` (weight) ranks first or second across nearly every method; `drat` (rear axle ratio) consistently ranks last. Agreement on rankings across methods provides more confidence than any single method alone.
 
 ---
 
 ## 2. Binary Outcome
 
-We binarize `mpg` at its median. Binary outcomes use logistic regression and McFadden pseudo-R² in place of linear regression and R².
+We binarize `mpg` at its median to create a 0/1 outcome. Binary outcomes use logistic regression (`glm` with `family = binomial`) and McFadden pseudo-R² in place of linear regression and R². `kda()` detects the binary type automatically — no arguments change.
+
+Note that Johnson Relative Weights (`jrw`) is available for binary outcomes but `XGBoost` uses `binary:logistic` rather than the regression objective.
 
 ```{r}
 #| warning: false
@@ -79,18 +93,20 @@ result_bin <- kda(high_mpg ~ disp + hp + wt + drat,
 print(result_bin)
 ```
 
-`kda()` detects `high_mpg` as binary (0/1 numeric) and routes each method to the correct model automatically — no arguments change from the continuous case. Note that `jrw` is unavailable for binary outcomes and would return NAs if requested. The Shapley pseudo-R² of 1 reflects near-perfect separation in this small dataset — the four predictors collectively predict `high_mpg` with very high accuracy, which is expected for `mtcars`.
+The warnings suppressed above arise because the median split on this small dataset produces near-perfect separation — the four predictors collectively classify `high_mpg` with very high accuracy. This is an artifact of the toy data; in practice, logistic regression warnings of this kind warrant investigation but do not invalidate the importance scores.
 
 ---
 
 ## 3. Ordinal Outcome
 
-We discretize `mpg` into three ordered tiers. Ordinal outcomes use proportional odds regression (`polr`) and McFadden pseudo-R².
+We discretize `mpg` into three ordered tiers. Ordinal outcomes use proportional odds regression (`polr` from `MASS`) and McFadden pseudo-R². The outcome must be an **ordered factor** — `kda()` will error on an unordered factor and stop with a clear message.
+
+Ordinal predictor variables, if any, are automatically converted to integer ranks before being passed to any regression-based method. Nominal (unordered factor) predictors are blocked entirely.
 
 ```{r}
 mtcars$mpg_tier <- cut(mtcars$mpg,
-                       breaks        = quantile(mtcars$mpg, c(0, 1/3, 2/3, 1)),
-                       labels        = c("low", "mid", "high"),
+                       breaks         = quantile(mtcars$mpg, c(0, 1/3, 2/3, 1)),
+                       labels         = c("low", "mid", "high"),
                        include.lowest = TRUE)
 mtcars$mpg_tier <- factor(mtcars$mpg_tier, ordered = TRUE)
 
@@ -105,13 +121,13 @@ result_ord <- kda(mpg_tier ~ disp + hp + wt + drat,
 print(result_ord)
 ```
 
-Ordinal x variables (if any) are automatically converted to integer ranks before being passed to regression models. Nominal (unordered factor) variables are blocked entirely — `kda()` stops with a clear message if one is supplied.
-
 ---
 
 ## 4. Bootstrap Confidence Intervals
 
-`kda_boot()` wraps `kda()` and runs it on `B` bootstrap resamples to produce percentile confidence intervals for every importance score. All method flags and `_params` arguments are passed through unchanged.
+`kda_boot()` wraps `kda()` and runs it on `B` bootstrap resamples to produce percentile confidence intervals for every importance score. All method flags and `_params` arguments are passed through unchanged; `verbose` is suppressed automatically during resampling.
+
+The `seed` argument makes the full run reproducible — it is set before both the full-data call and all bootstrap iterations, so stochastic methods (RF, XGBoost, SHAP) produce the same results each time. For stochastic methods, reduce per-iteration cost via smaller `ntree`, `nrounds`, or `nsim` when `B` is large.
 
 ```{r}
 result_boot <- kda_boot(mpg ~ disp + hp + wt + drat,
@@ -127,13 +143,15 @@ result_boot <- kda_boot(mpg ~ disp + hp + wt + drat,
 print(result_boot)
 ```
 
-`print()` shows the full-data point estimates followed by the CIs. The `seed` argument makes results reproducible. For stochastic methods (RF, XGBoost, SHAP), reduce `ntree`, `nrounds`, or `nsim` when `B` is large to keep runtime manageable. The result object also exposes `result_boot$estimate` (the full-data `kda` object), `result_boot$ci_lower`, and `result_boot$ci_upper` for programmatic access.
+The result object exposes `result_boot$estimate` (the full-data `kda` object), `result_boot$ci_lower`, and `result_boot$ci_upper` for programmatic access.
 
 ---
 
 ## 5. Plotting
 
-`plot()` dispatches on `kda` and `kda_boot` objects. Drivers are ordered from most to least important on the vertical axis; each method gets its own color; CI lines appear automatically for `kda_boot` results.
+`plot()` dispatches on both `kda` and `kda_boot` objects and produces a horizontal dot plot via ggplot2. Drivers are ordered from most to least important on the vertical axis; each method gets its own color. For `kda_boot` objects, CI lines are drawn automatically behind each point.
+
+The `colors` argument accepts a named or unnamed character vector to override the default palette; `bg_color` sets the panel and plot background.
 
 ```{r}
 # Point estimates from the continuous example
@@ -143,8 +161,7 @@ plot(result)
 ```{r}
 # Bootstrap result with CIs — custom colors and background
 plot(result_boot,
-     colors   = c(correlation = "steelblue", beta = "tomato",
-                  rf_importance = "forestgreen"),
+     colors   = c(corr = "steelblue", beta = "tomato", rf = "forestgreen"),
      bg_color = "#f8f8f8")
 ```
 
@@ -243,20 +260,4 @@ partial(rf_model, pred.var = c("wt", "hp"), plot = TRUE, chull = TRUE)
 # Confirm with a formal test in the linear model
 m_int <- lm(mpg ~ disp + hp + wt + drat + wt:hp, data = mtcars)
 anova(m_lm, m_int)
-```
-
----
-
-## Formula Syntax
-
-The pipe separator `|` partitions key drivers from control variables:
-
-```r
-kda(y ~ x1 + x2 + x3 | z1 + z2, data = df, ...)
-```
-
-Controls are included in every regression-based model but are not assigned importance scores. Their contribution to model fit is held constant before the key drivers are evaluated. Without controls, use the standard syntax:
-
-```r
-kda(y ~ x1 + x2 + x3, data = df, ...)
 ```

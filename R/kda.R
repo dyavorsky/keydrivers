@@ -98,7 +98,7 @@ kda <- function(form, data,
   if (corr) {
     cor_result <- sub_cor(y_var, x_vars, data, cor_params, verbose=verbose)
     results$correlations <- cor_result
-    importance_matrix <- cbind(importance_matrix, correlation=cor_result$importance)
+    importance_matrix <- cbind(importance_matrix, corr=cor_result$importance)
   }
 
   if (beta) {
@@ -134,13 +134,13 @@ kda <- function(form, data,
   if (randforest) {
     rf_result <- sub_randomforest(y_var, x_vars, z_vars, data, y_type, rf_params, verbose=verbose)
     results$randomforest <- rf_result
-    importance_matrix <- cbind(importance_matrix, rf_importance=rf_result$importance)
+    importance_matrix <- cbind(importance_matrix, rf=rf_result$importance)
   }
 
   if (xgboost_) {
     xgb_result <- sub_xgboost(y_var, x_vars, z_vars, data, y_type, xgb_params, verbose=verbose)
     results$xgboost <- xgb_result
-    importance_matrix <- cbind(importance_matrix, xgb_importance=xgb_result$importance)
+    importance_matrix <- cbind(importance_matrix, xgb=xgb_result$importance)
   }
 
   if (normalize) {
