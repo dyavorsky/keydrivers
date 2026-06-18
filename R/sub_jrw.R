@@ -28,27 +28,30 @@ sub_jrw <- function(y_var, x_vars, z_vars, data, y_type, params=list(), verbose=
       complete_data[[var]] <- as.numeric(complete_data[[var]])
   }
 
-  X <- as.matrix(complete_data[, all_predictors])
-  y <- complete_data[[y_var]]
+  cor_vars <- c(y_var, all_predictors)
+  R        <- cor(complete_data[, cor_vars], use = "everything")
+  x_col    <- seq(2, length(cor_vars))
 
   tryCatch({
-    rw_result  <- relWt(X, y)
-    importance <- rw_result$relWt[x_vars]
-    names(importance) <- x_vars
+    rw_result  <- relWt(R, y_col = 1, x_col = x_col)
+    eps_vec    <- as.numeric(rw_result$eps[["EPS"]])  # $eps is a data.frame
+    all_eps    <- setNames(eps_vec, all_predictors)
+    importance <- all_eps[x_vars]
+    r2         <- sum(eps_vec)                         # weights sum to full-model R²
 
     if (verbose) {
       miss_str <- if (n_missing > 0) paste0(", ", n_missing, " missing") else ""
       message("\nJohnson Relative Weights: n = ", n, miss_str,
-              ", R² = ", round(rw_result$R2, 3))
+              ", R² = ", round(r2, 3))
     }
 
     return(list(
       importance       = importance,
-      r2               = rw_result$R2,
+      r2               = r2,
       n                = n,
       n_missing        = n_missing,
       missing_strategy = "listwise",
-      all_rel_weights  = rw_result$relWt
+      all_rel_weights  = all_eps
     ))
 
   }, error = function(e) {
