@@ -37,6 +37,15 @@ By default (`normalize = TRUE`) each method's scores are rescaled to sum to 100,
 
 The formula `y ~ x1 + x2 + x3 | z1 + z2` optionally separates key driver variables from control variables using a `|`. Controls are held fixed in all regression-based methods and excluded from bivariate correlations. Method-specific tuning is available via `_params` arguments: `rf_params` (`ntree`, `mtry`), `xgb_params` (`nrounds`, `max_depth`, `eta`), and `shapex_params` (`nsim`) are currently effective. `cor_params`, `beta_params`, `useful_params`, `jrw_params`, and `shapley_params` are accepted but not yet wired to any tunable parameters.
 
+Outcome type is detected from the class of `y`, but `y_type` overrides it. The main use is forcing `"continuous"` on a 0/1 outcome to fit a linear probability model instead of logistic regression:
+
+```r
+kda(bought ~ x1 + x2 + x3 | brand_2 + brand_3,
+    data = dat, shapley = TRUE, y_type = "continuous")
+```
+
+Besides matching a house convention, this is dramatically faster for Shapley/LMG — the continuous path gets each subset's R² from a pre-computed correlation matrix, while the binary path refits `glm()` for all 2^p subsets.
+
 ## Methods
 
 | Flag | Method | Model(s) |

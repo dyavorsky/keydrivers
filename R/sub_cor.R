@@ -7,14 +7,14 @@
 #
 # Missing values are handled pairwise: each y-x pair is filtered to complete
 # cases independently before computing its correlation.
-sub_cor <- function(y_var, x_vars, data, params=list(), verbose=FALSE) {
+sub_cor <- function(y_var, x_vars, data, y_type=NULL, params=list(), verbose=FALSE) {
 
   importance  <- setNames(rep(NA_real_,      length(x_vars)), x_vars)
   cor_methods <- setNames(rep(NA_character_, length(x_vars)), x_vars)
   n_obs       <- setNames(rep(NA_integer_,   length(x_vars)), x_vars)
   n_total     <- nrow(data)
 
-  y_type <- detect_var_type(data[[y_var]])
+  if (is.null(y_type)) y_type <- detect_var_type(data[[y_var]])
 
   if (verbose) message("\nCorrelations (pairwise deletion):")
 

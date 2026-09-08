@@ -16,6 +16,10 @@
 # - `shapex`: Compute SHAP values (logical)
 # - `randforest`: Compute Random Forest importance (logical)
 # - `xgboost_`: Compute XGBoost importance (logical)
+# - `y_type`: Override the auto-detected outcome type: "continuous", "binary",
+#   or "ordinal". Default NULL detects from the class of y. The main use is
+#   forcing "continuous" on a 0/1 outcome to fit a linear probability model
+#   rather than logistic regression.
 # - `verbose`: Print progress messages during execution (logical, default TRUE)
 # - `cor_params`: Parameters for correlations
 # - `beta_params`: Parameters for regression
@@ -41,7 +45,7 @@
 kda <- function(form, data,
                 corr=FALSE, beta=FALSE, useful=FALSE, jrw=FALSE,
                 shapley=FALSE, shapex=FALSE, randforest=FALSE, xgboost_=FALSE,
-                verbose=TRUE, normalize=TRUE,
+                y_type=NULL, verbose=TRUE, normalize=TRUE,
                 cor_params=list(), beta_params=list(), useful_params=list(),
                 jrw_params=list(), shapley_params=list(), shapex_params=list(),
                 rf_params=list(), xgb_params=list()) {
@@ -52,8 +56,21 @@ kda <- function(form, data,
   x_vars <- parsed$x_vars
   z_vars <- parsed$z_vars
 
-  # Detect data types
-  y_type  <- detect_var_type(data[[y_var]])
+  # Detect data types. y_type may be overridden by the caller: forcing
+  # "continuous" on a 0/1 outcome fits a linear probability model.
+  y_detected <- detect_var_type(data[[y_var]])
+  if (is.null(y_type)) {
+    y_type <- y_detected
+  } else {
+    y_type <- match.arg(y_type, c("continuous", "binary", "ordinal"))
+    if (y_type == "continuous" && !is.numeric(data[[y_var]]))
+      stop("y_type = 'continuous' requires a numeric outcome; ", y_var,
+           " is ", class(data[[y_var]])[1], ".")
+    if (y_type == "ordinal" && !is.ordered(data[[y_var]]))
+      data[[y_var]] <- factor(data[[y_var]], ordered=TRUE)
+    if (verbose && y_type != y_detected)
+      message("Outcome type overridden: ", y_detected, " -> ", y_type)
+  }
   x_types <- sapply(x_vars, function(x) detect_var_type(data[[x]]))
 
   if (y_type == "nominal") {
@@ -96,7 +113,7 @@ kda <- function(form, data,
 
   # Call each sub-function if enabled
   if (corr) {
-    cor_result <- sub_cor(y_var, x_vars, data, cor_params, verbose=verbose)
+    cor_result <- sub_cor(y_var, x_vars, data, y_type, cor_params, verbose=verbose)
     results$correlations <- cor_result
     importance_matrix <- cbind(importance_matrix, corr=cor_result$importance)
   }

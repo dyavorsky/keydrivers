@@ -14,7 +14,7 @@ for each method automatically.
 kda(form, data,
     corr = FALSE, beta = FALSE, useful = FALSE, jrw = FALSE,
     shapley = FALSE, shapex = FALSE, randforest = FALSE, xgboost_ = FALSE,
-    verbose = TRUE, normalize = TRUE,
+    y_type = NULL, verbose = TRUE, normalize = TRUE,
     cor_params = list(), beta_params = list(), useful_params = list(),
     jrw_params = list(), shapley_params = list(), shapex_params = list(),
     rf_params = list(), xgb_params = list())
@@ -64,6 +64,20 @@ kda(form, data,
   \code{reg:squarederror} (continuous y), \code{binary:logistic} (binary y),
   \code{multi:softmax} (ordinal y with 3+ levels).}
 
+\item{y_type}{Optional character string overriding the auto-detected outcome
+  type: \code{"continuous"}, \code{"binary"}, or \code{"ordinal"}. Default
+  \code{NULL} detects the type from the class of \code{y} (see Details).
+
+  The main use is forcing \code{"continuous"} on a 0/1 outcome, which fits a
+  linear probability model instead of logistic regression. Besides matching a
+  house convention, this is dramatically faster for Shapley/LMG: the continuous
+  path computes each subset's R² from a pre-computed correlation matrix, whereas
+  the binary path refits \code{glm()} for all \eqn{2^p} subsets.
+
+  Forcing \code{"continuous"} requires a numeric outcome; forcing
+  \code{"ordinal"} coerces the outcome to an ordered factor if it is not one
+  already.}
+
 \item{verbose}{Logical (default \code{TRUE}); print a summary header and
   per-method messages (sample size, model type, R²) to \code{stderr} via
   \code{message()}.}
@@ -99,7 +113,8 @@ kda(form, data,
 }
 
 \details{
-Variable types are detected automatically from R class:
+Variable types are detected automatically from R class (the outcome's detected
+type can be overridden with \code{y_type}):
 \itemize{
   \item \strong{Continuous}: numeric vectors whose values are not exclusively 0 and 1.
   \item \strong{Binary}: numeric vectors containing only 0 and 1, or logical vectors.
@@ -133,8 +148,9 @@ A list of class \code{"kda"} with components:
 \item{y_var}{Name of the outcome variable.}
 \item{x_vars}{Character vector of key driver variable names.}
 \item{z_vars}{Character vector of control variable names (empty if none).}
-\item{y_type}{Detected type of the outcome: \code{"continuous"}, \code{"binary"},
-  or \code{"ordinal"}.}
+\item{y_type}{Type of the outcome used for modelling: \code{"continuous"},
+  \code{"binary"}, or \code{"ordinal"}. Equals the detected type unless the
+  \code{y_type} argument overrode it.}
 \item{x_types}{Named character vector of detected types for each key driver.}
 \item{correlations}{Correlation metadata (if \code{corr = TRUE}): importance
   scores, correlation methods used per variable, and per-pair sample sizes.}
